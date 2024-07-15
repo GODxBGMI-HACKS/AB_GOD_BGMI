@@ -334,7 +334,7 @@ VIP 🌟:
 1𝐖𝐞𝐞𝐤: 800 𝐫𝐬
 2𝐖𝐞𝐞𝐤: 1200 𝐫𝐬
 𝐌𝐨𝐧𝐓𝐡: 1700 𝐫𝐬 
-@AmitPfc 💥
+@GODxBGMI_OWNER 💥
 '''
     bot.reply_to(message, response)
 
