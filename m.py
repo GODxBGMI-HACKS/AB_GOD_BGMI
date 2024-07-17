@@ -48,7 +48,7 @@ def save_users():
     with open(USER_FILE, "w") as file:
         json.dump(users, file)
 
-def read_keys():
+def load_keys():
         try:
         with open(KEY_FILE, "r") as file:
             return json.load(file)
