@@ -5,6 +5,7 @@ import os
 import random
 import string
 import json
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 from keep_alive import keep_alive
 keep_alive()
@@ -69,7 +70,7 @@ def add_time_to_current_date(hours=0, days=0):
     return (datetime.datetime.now() + datetime.timedelta(hours=hours, days=days)).strftime('%Y-%m-%d %H:%M:%S')
 
 # Command to generate keys
-@bot.message_handler(commands=['genkey'])
+application.add_handler(CommandHandler("genkey", genkey))
 async def genkey(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = str(update.message.from_user.id)
     if user_id in ADMIN_IDS:
@@ -98,7 +99,7 @@ async def genkey(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(response)
 
 
-@bot.message_handler(commands=['redeem'])
+application.add_handler(CommandHandler("redeem", redeem))
 async def redeem(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = str(update.message.from_user.id)
     command = context.args
