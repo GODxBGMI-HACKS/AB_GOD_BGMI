@@ -48,15 +48,82 @@ def save_users():
         json.dump(users, file)
 
 def read_keys():
-    try:
+        try:
         with open(KEY_FILE, "r") as file:
             return json.load(file)
     except FileNotFoundError:
+        return {}
+    except Exception as e:
+        print(f"Error loading keys: {e}")
         return {}
 
 def save_keys():
     with open(KEY_FILE, "w") as file:
         json.dump(keys, file)
+
+def generate_key(length=9):
+    characters = string.ascii_letters + string.digits
+    return ''.join(random.choice(characters) for _ in range(length))
+
+def add_time_to_current_date(hours=0, days=0):
+    return (datetime.datetime.now() + datetime.timedelta(hours=hours, days=days)).strftime('%Y-%m-%d %H:%M:%S')
+
+# Command to generate keys
+@bot.message_handler(commands=['genkey'])
+async def genkey(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user_id = str(update.message.from_user.id)
+    if user_id in ADMIN_IDS:
+        command = context.args
+        if len(command) == 2:
+            try:
+                time_amount = int(command[0])
+                time_unit = command[1].lower()
+                if time_unit == 'hours':
+                    expiration_date = add_time_to_current_date(hours=time_amount)
+                elif time_unit == 'days':
+                    expiration_date = add_time_to_current_date(days=time_amount)
+                else:
+                    raise ValueError("Invalid time unit")
+                key = generate_key()
+                keys[key] = expiration_date
+                save_keys()
+                response = f"Key generated: {key}\nExpires on: {expiration_date}"
+            except ValueError:
+                response = f"Please specify a valid number and unit of time (hours/days) script by OWNER- @GODxBGMI_OWNER ..."
+        else:
+            response = "Usage: /genkey <amount> <hours/days>"
+    else:
+        response = f"ONLY OWNER CAN USE💀OWNER OWNER- @GODxBGMI_OWNER ..."
+
+    await update.message.reply_text(response)
+
+
+@bot.message_handler(commands=['redeem'])
+async def redeem(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user_id = str(update.message.from_user.id)
+    command = context.args
+    if len(command) == 1:
+        key = command[0]
+        if key in keys:
+            expiration_date = keys[key]
+            if user_id in users:
+                user_expiration = datetime.datetime.strptime(users[user_id], '%Y-%m-%d %H:%M:%S')
+                new_expiration_date = max(user_expiration, datetime.datetime.now()) + datetime.timedelta(hours=1)
+                users[user_id] = new_expiration_date.strftime('%Y-%m-%d %H:%M:%S')
+            else:
+                users[user_id] = expiration_date
+            save_users()
+            del keys[key]
+            save_keys()
+            response = f"✅Key redeemed successfully! Access granted until: {users[user_id]} OWNER- @GODxBGMI_OWNER ..."
+        else:
+            response = f"Invalid or expired key buy from OWNER- @GODxBGMI_OWNER ..."
+    else:
+        response = f"Usage: /redeem <key> if you don't  have  buy from  @GODxBGMI_OWNER ..."
+
+    await update.message.reply_text(response)
+
+
 
 def log_command(user_id, target, port, time):
     user_info = bot.get_chat(user_id)
@@ -88,65 +155,6 @@ def record_command_logs(user_id, command, target=None, port=None, time=None):
     with open(LOG_FILE, "a") as file:
         file.write(log_entry + "\n")
 
-def generate_key(length=6):
-    characters = string.ascii_letters + string.digits
-    return ''.join(random.choice(characters) for _ in range(length))
-
-def add_time_to_current_date(hours=0, days=0):
-    return (datetime.datetime.now() + datetime.timedelta(hours=hours, days=days)).strftime('%Y-%m-%d %H:%M:%S')
-
-@bot.message_handler(commands=['genkey'])
-def generate_key_command(message):
-    user_id = str(message.chat.id)
-    if user_id in admin_id:
-        command = message.text.split()
-        if len(command) == 3:
-            try:
-                time_amount = int(command[1])
-                time_unit = command[2].lower()
-                if time_unit == 'hours':
-                    expiration_date = add_time_to_current_date(hours=time_amount)
-                elif time_unit == 'days':
-                    expiration_date = add_time_to_current_date(days=time_amount)
-                else:
-                    raise ValueError("Invalid time unit")
-                key = generate_key()
-                keys[key] = expiration_date
-                save_keys()
-                response = f"𝐊𝐞𝐲 𝐆𝐞𝐧𝐞𝐫𝐚𝐭𝐢𝐨𝐧: {key}\n𝐄𝐬𝐩𝐢𝐫𝐞𝐬 𝐎𝐧: {expiration_date}"
-            except ValueError:
-                response = "𝐏𝐥𝐞𝐚𝐬𝐞 𝐒𝐩𝐞𝐜𝐢𝐟𝐲 𝐀 𝐕𝐚𝐥𝐢𝐝 𝐍𝐮𝐦𝐛𝐞𝐫 𝐚𝐧𝐝 𝐮𝐧𝐢𝐭 𝐨𝐟 𝐓𝐢𝐦𝐞 (hours/days)."
-        else:
-            response = "𝐔𝐬𝐚𝐠𝐞: /genkey <amount> <hours/days>"
-    else:
-        response = "𝐎𝐧𝐥𝐲 𝐏𝐚𝐩𝐚 𝐎𝐟 𝐛𝐨𝐭 𝐜𝐚𝐧 𝐝𝐨 𝐭𝐡𝐢𝐬"
-
-    bot.reply_to(message, response)
-
-@bot.message_handler(commands=['redeem'])
-def redeem_key_command(message):
-    user_id = str(message.chat.id)
-    command = message.text.split()
-    if len(command) == 2:
-        key = command[1]
-        if key in keys:
-            expiration_date = keys[key]
-            if user_id in users:
-                user_expiration = datetime.datetime.strptime(users[user_id], '%Y-%m-%d %H:%M:%S')
-                new_expiration_date = max(user_expiration, datetime.datetime.now()) + datetime.timedelta(hours=1)
-                users[user_id] = new_expiration_date.strftime('%Y-%m-%d %H:%M:%S')
-            else:
-                users[user_id] = expiration_date
-            save_users()
-            del keys[key]
-            save_keys()
-            response = f"✅𝐊𝐞𝐲 𝐫𝐞𝐝𝐞𝐞𝐦𝐞𝐝 𝐒𝐮𝐜𝐜𝐞𝐬𝐟𝐮𝐥𝐥𝐲! 𝐀𝐜𝐜𝐞𝐬𝐬 𝐆𝐫𝐚𝐧𝐭𝐞𝐝 𝐔𝐧𝐭𝐢𝐥𝐥: {users[user_id]}"
-        else:
-            response = "𝐄𝐱𝐩𝐢𝐫𝐞 𝐊𝐞𝐘 𝐌𝐚𝐭 𝐃𝐚𝐚𝐋 𝐋𝐚𝐰𝐝𝐞 ."
-    else:
-        response = "𝐔𝐬𝐚𝐠𝐞: /redeem <key>"
-
-    bot.reply_to(message, response)
 
 @bot.message_handler(commands=['bgmi'])
 def handle_bgmi(message):
